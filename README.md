@@ -1,6 +1,10 @@
-# ElectroMonkey
+<p align="center">
+  <img src="assets/icon.png" alt="ElectroMonkey" width="128">
+</p>
 
-Electron 应用旁载插件框架，提供类似 Tampermonkey 的体验。
+<h1 align="center">ElectroMonkey</h1>
+
+<p align="center">Electron 应用旁载插件框架，提供类似 Tampermonkey 的体验。</p>
 
 通过 asar-patch 技术将插件系统注入到已发布的 Electron 应用中，支持多插件管理、URL 匹配、GM_\* API、CSS/JS 注入，且不破坏原始应用文件（可一键还原）。
 
@@ -196,8 +200,10 @@ electromonkey/
 ├── scripts/
 │   ├── deploy.js           # 部署脚本（asar-patch）
 │   └── undeploy.js         # 卸载脚本（还原 asar）
+├── assets/
+│   └── icon.png            # 应用图标
 ├── plugins/
-│   ├── example-plugin/     # 示例插件（目录格式）
+│   ├── control-panel/      # ElectroMonkey 控制面板（目录格式）
 │   │   ├── manifest.json
 │   │   ├── renderer.js
 │   │   └── style.css

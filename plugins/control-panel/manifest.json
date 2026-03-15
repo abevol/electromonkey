@@ -1,9 +1,9 @@
 {
-  "name": "ElectroMonkey 示例插件",
+  "name": "ElectroMonkey 控制面板",
   "version": "1.0.0",
-  "description": "展示补丁框架的基本功能：状态浮标、控制台日志、快捷键面板",
+  "description": "ElectroMonkey 控制面板：状态浮标、插件管理、快捷键面板",
   "author": "ElectroMonkey",
-  "match": ["*://*.douyin.com/*", "*://localhost/*", "*://*/*"],
+  "match": ["*://localhost/*", "*://*/*"],
   "exclude": [],
   "runAt": "document-idle",
   "renderer": "renderer.js",

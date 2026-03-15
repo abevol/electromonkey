@@ -80,6 +80,16 @@
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dp-panel-icon {
+  width: 24px;
+  height: 24px;
+  vertical-align: middle;
+  border-radius: 4px;
 }
 
 .dp-panel-close {

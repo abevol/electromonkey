@@ -16,8 +16,10 @@ electromonkey/
 ├── scripts/
 │   ├── deploy.js        # asar-patch deployer (backup + bootstrap asar)
 │   └── undeploy.js      # Restores original asar from backup
+├── assets/
+│   └── icon.png         # App icon
 ├── plugins/             # Plugin directory (subfolder plugins + .user.js single-file scripts)
-│   ├── example-plugin/  # Directory plugin (manifest.json + renderer.js + style.css)
+│   ├── control-panel/   # ElectroMonkey Control Panel (manifest.json + renderer.js + style.css)
 │   └── example-userscript.user.js  # Tampermonkey .user.js single-file script
 └── package.json         # Project root with deploy/undeploy scripts
 ```
