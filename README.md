@@ -39,9 +39,18 @@ npm install
 ### 部署 / 卸载
 
 ```bash
-npm run deploy     # 部署插件框架
+npm run deploy     # 部署插件框架（使用 package.json 中配置的目标路径）
 npm run undeploy   # 还原原始应用
 ```
+
+也可以通过 `--target` 参数指定目标应用的 `resources` 目录，覆盖 `package.json` 中的默认配置：
+
+```bash
+node scripts/deploy.js --target /path/to/electron-app/resources
+node scripts/undeploy.js --target /path/to/electron-app/resources
+```
+
+> **路径解析优先级**：`--target` 参数 > `package.json` 中的 `config.targetApp`
 
 部署后直接启动目标应用即可，无需特殊启动器。
 
