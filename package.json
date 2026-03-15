@@ -1,0 +1,13 @@
+{
+  "name": "electromonkey",
+  "version": "1.0.0",
+  "description": "ElectroMonkey — Electron 应用旁载插件框架，类 Tampermonkey 体验",
+  "private": true,
+  "scripts": {
+    "deploy": "node scripts/deploy.js",
+    "undeploy": "node scripts/undeploy.js"
+  },
+  "config": {
+    "targetApp": "../douyin/7.4.0/resources"
+  }
+}

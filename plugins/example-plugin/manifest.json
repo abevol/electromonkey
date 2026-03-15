@@ -1,0 +1,14 @@
+{
+  "name": "ElectroMonkey 示例插件",
+  "version": "1.0.0",
+  "description": "展示补丁框架的基本功能：状态浮标、控制台日志、快捷键面板",
+  "author": "ElectroMonkey",
+  "match": ["*://*.douyin.com/*", "*://localhost/*", "*://*/*"],
+  "exclude": [],
+  "runAt": "document-idle",
+  "renderer": "renderer.js",
+  "css": "style.css",
+  "main": null,
+  "grant": ["GM_addStyle", "GM_setValue", "GM_getValue", "GM_notification", "GM_log"],
+  "enabled": true
+}

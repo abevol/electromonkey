@@ -1,0 +1,8 @@
+{
+  "name": "douyin",
+  "version": "7.4.0",
+  "description": "ElectroMonkey Loader",
+  "main": "loader.js",
+  "universal": true,
+  "license": "UNLICENSED"
+}
