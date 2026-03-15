@@ -10,14 +10,15 @@ ElectroMonkey is a sideloading plugin framework for Electron applications (prima
 electromonkey/
 ├── src/patch/           # Runtime injection modules (loaded inside target app)
 │   ├── loader.js        # Main process injector (BrowserWindow patch + web-contents-created)
-│   ├── plugin-manager.js # Plugin discovery, URL matching, GM_* API builder
+│   ├── plugin-manager.js # Plugin discovery, URL matching, GM_* API builder, UserScript header parser
 │   ├── preload-inject.js # Renderer preload chain loader + plugin injector
 │   └── package.json
 ├── scripts/
 │   ├── deploy.js        # asar-patch deployer (backup + bootstrap asar)
 │   └── undeploy.js      # Restores original asar from backup
-├── plugins/             # Plugin directory (each subfolder = one plugin)
-│   └── example-plugin/
+├── plugins/             # Plugin directory (subfolder plugins + .user.js single-file scripts)
+│   ├── example-plugin/  # Directory plugin (manifest.json + renderer.js + style.css)
+│   └── example-userscript.user.js  # Tampermonkey .user.js single-file script
 └── package.json         # Project root with deploy/undeploy scripts
 ```
 
@@ -38,6 +39,10 @@ electromonkey/
 
 ## Plugin Structure
 
+Two formats are supported:
+
+### Format 1: Directory plugin (manifest.json)
+
 Each plugin is a directory under `plugins/` with a `manifest.json`:
 
 ```json
@@ -51,6 +56,26 @@ Each plugin is a directory under `plugins/` with a `manifest.json`:
   "grant": ["GM_addStyle", "GM_setValue"]
 }
 ```
+
+### Format 2: Tampermonkey .user.js single-file script
+
+Place `.user.js` files directly in `plugins/`. Metadata is parsed from the `==UserScript==` header block:
+
+```javascript
+// ==UserScript==
+// @name        My Script
+// @version     1.0.0
+// @match       *://*.douyin.com/*
+// @grant       GM_addStyle
+// ==/UserScript==
+```
+
+Key implementation details:
+- `PluginManager.parseUserScriptHeader(source)` — static method that parses the header into a `{ meta, body }` object
+- `discoverPlugins()` scans for `.user.js` files after directory plugins; sets `plugin.isUserScript = true` and `plugin.userScriptBody`
+- `getPluginRendererSource()` returns `plugin.userScriptBody` directly for userscripts instead of reading from disk
+- `buildRendererCode()` requires no changes — the IIFE + GM_* wrapper works identically for both formats
+- Supported tags: `@name`, `@version`, `@description`, `@author`, `@match`, `@include` (alias for `@match`), `@exclude`, `@exclude-match`, `@run-at`, `@grant` (`none` = empty array), `@require`, `@resource`, `@namespace`, `@noframes`
 
 ## Code Conventions
 

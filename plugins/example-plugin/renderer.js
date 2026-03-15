@@ -30,38 +30,51 @@
     // ── 3. 插件管理面板 ──────────────────────────────────────────────────────
     var panelVisible = GM_getValue('panelVisible', false);
 
+    function buildPluginListHTML() {
+      var list = GM_info.plugins || [GM_info.script];
+      var html = '';
+      for (var i = 0; i < list.length; i++) {
+        var p = list[i];
+        var icon = p.enabled !== false ? '\u2705' : '\u274C';
+        var tag = p.isUserScript ? ' \u003cspan class="dp-plugin-tag"\u003e.user.js\u003c/span\u003e' : '';
+        html += '\u003cdiv class="dp-plugin-item"\u003e';
+        html += '  \u003cdiv class="dp-plugin-name"\u003e' + icon + ' ' + p.name + tag + '\u003c/div\u003e';
+        html += '  \u003cdiv class="dp-plugin-desc"\u003e' + (p.description || '') + '\u003c/div\u003e';
+        html += '  \u003cdiv class="dp-plugin-version"\u003ev' + p.version + '\u003c/div\u003e';
+        html += '\u003c/div\u003e';
+      }
+      return html;
+    }
+
     function createPanel() {
       var panel = document.createElement('div');
       panel.id = 'em-panel';
       panel.innerHTML = [
-        '<div class="dp-panel-header">',
-        '  <span class="dp-panel-title">\uD83D\uDC35 ElectroMonkey 控制面板</span>',
-        '  <button class="dp-panel-close">\u2715</button>',
-        '</div>',
-        '<div class="dp-panel-body">',
-        '  <div class="dp-section">',
-        '    <div class="dp-section-title">框架信息</div>',
-        '    <div class="dp-info-row"><span>版本</span><span>v' + GM_info.patchVersion + '</span></div>',
-        '    <div class="dp-info-row"><span>当前页面</span><span class="dp-url">' + location.hostname + location.pathname.slice(0, 30) + '</span></div>',
-        '  </div>',
-        '  <div class="dp-section">',
-        '    <div class="dp-section-title">已加载插件</div>',
-        '    <div class="dp-plugin-item">',
-        '      <div class="dp-plugin-name">\u2705 ' + GM_info.script.name + '</div>',
-        '      <div class="dp-plugin-desc">' + GM_info.script.description + '</div>',
-        '      <div class="dp-plugin-version">v' + GM_info.script.version + '</div>',
-        '    </div>',
-        '  </div>',
-        '  <div class="dp-section">',
-        '    <div class="dp-section-title">快捷键</div>',
-        '    <div class="dp-info-row"><span>Ctrl+Shift+P</span><span>切换面板</span></div>',
-        '    <div class="dp-info-row"><span>Ctrl+Shift+D</span><span>切换浮标</span></div>',
-        '  </div>',
-        '  <div class="dp-section">',
-        '    <div class="dp-section-title">存储测试</div>',
-        '    <div class="dp-info-row"><span>面板打开次数</span><span id="dp-open-count">0</span></div>',
-        '  </div>',
-        '</div>',
+        '\u003cdiv class="dp-panel-header"\u003e',
+        '  \u003cspan class="dp-panel-title"\u003e\uD83D\uDC35 ElectroMonkey 控制面板\u003c/span\u003e',
+        '  \u003cbutton class="dp-panel-close"\u003e\u2715\u003c/button\u003e',
+        '\u003c/div\u003e',
+        '\u003cdiv class="dp-panel-body"\u003e',
+        '  \u003cdiv class="dp-section"\u003e',
+        '    \u003cdiv class="dp-section-title"\u003e框架信息\u003c/div\u003e',
+        '    \u003cdiv class="dp-info-row"\u003e\u003cspan\u003e版本\u003c/span\u003e\u003cspan\u003ev' + GM_info.patchVersion + '\u003c/span\u003e\u003c/div\u003e',
+        '    \u003cdiv class="dp-info-row"\u003e\u003cspan\u003e当前页面\u003c/span\u003e\u003cspan class="dp-url"\u003e' + location.hostname + location.pathname.slice(0, 30) + '\u003c/span\u003e\u003c/div\u003e',
+        '    \u003cdiv class="dp-info-row"\u003e\u003cspan\u003e插件总数\u003c/span\u003e\u003cspan\u003e' + (GM_info.plugins ? GM_info.plugins.length : 1) + '\u003c/span\u003e\u003c/div\u003e',
+        '  \u003c/div\u003e',
+        '  \u003cdiv class="dp-section"\u003e',
+        '    \u003cdiv class="dp-section-title"\u003e已加载插件\u003c/div\u003e',
+             buildPluginListHTML(),
+        '  \u003c/div\u003e',
+        '  \u003cdiv class="dp-section"\u003e',
+        '    \u003cdiv class="dp-section-title"\u003e快捷键\u003c/div\u003e',
+        '    \u003cdiv class="dp-info-row"\u003e\u003cspan\u003eCtrl+Shift+P\u003c/span\u003e\u003cspan\u003e切换面板\u003c/span\u003e\u003c/div\u003e',
+        '    \u003cdiv class="dp-info-row"\u003e\u003cspan\u003eCtrl+Shift+D\u003c/span\u003e\u003cspan\u003e切换浮标\u003c/span\u003e\u003c/div\u003e',
+        '  \u003c/div\u003e',
+        '  \u003cdiv class="dp-section"\u003e',
+        '    \u003cdiv class="dp-section-title"\u003e存储测试\u003c/div\u003e',
+        '    \u003cdiv class="dp-info-row"\u003e\u003cspan\u003e面板打开次数\u003c/span\u003e\u003cspan id="dp-open-count"\u003e0\u003c/span\u003e\u003c/div\u003e',
+        '  \u003c/div\u003e',
+        '\u003c/div\u003e',
       ].join('\n');
       document.body.appendChild(panel);
 

@@ -4,7 +4,8 @@
  * plugin-manager.js — 插件生命周期管理
  *
  * 职责：
- *   - 从 plugins/ 目录发现并加载插件
+ *   - 从 plugins/ 目录发现并加载插件（支持目录插件 + .user.js 单文件脚本）
+ *   - 解析 Tampermonkey ==UserScript== 元数据头
  *   - URL 匹配（支持 Tampermonkey @match 语法）
  *   - 构建可注入的渲染器代码（包装 GM_* API）
  *   - 加载主进程钩子
@@ -78,6 +79,127 @@ class PluginManager {
         console.error('[ElectroMonkey] Failed to load manifest:', entry.name, err.message);
       }
     }
+
+    // ── .user.js 单文件脚本扫描 ──
+    for (const entry of entries) {
+      if (entry.isDirectory() || !entry.name.endsWith('.user.js')) continue;
+
+      const filePath = path.join(this.pluginsDir, entry.name);
+      try {
+        const source = fs.readFileSync(filePath, 'utf-8');
+        const parsed = PluginManager.parseUserScriptHeader(source);
+        if (!parsed || !parsed.meta.name) {
+          console.warn('[ElectroMonkey] Skipping (invalid userscript header):', entry.name);
+          continue;
+        }
+
+        const id = entry.name.replace(/\.user\.js$/, '');
+
+        this.plugins.push({
+          id,
+          dir: this.pluginsDir,
+          isUserScript: true,
+          userScriptBody: parsed.body,
+          manifest: {
+            name: parsed.meta.name,
+            version: parsed.meta.version,
+            description: parsed.meta.description,
+            author: parsed.meta.author,
+            match: parsed.meta.match.length > 0 ? parsed.meta.match : ['*://*/*'],
+            exclude: parsed.meta.exclude,
+            runAt: parsed.meta.runAt || 'document-idle',
+            enabled: true,
+            renderer: entry.name,
+            main: null,
+            css: null,
+            grant: parsed.meta.grant,
+          },
+        });
+
+        console.log('[ElectroMonkey] Discovered userscript:', parsed.meta.name, 'v' + parsed.meta.version);
+      } catch (err) {
+        console.error('[ElectroMonkey] Failed to load userscript:', entry.name, err.message);
+      }
+    }
+  }
+
+  // ── UserScript 头解析 ────────────────────────────────────────────────────────
+  //    解析 Tampermonkey ==UserScript== 元数据块，映射到内部 manifest 结构
+
+  /**
+   * 解析 .user.js 文件中的 ==UserScript== 元数据头
+   * @param {string} source - 完整的 .user.js 文件内容
+   * @returns {{ meta: object, body: string } | null}
+   */
+  static parseUserScriptHeader(source) {
+    const headerMatch = source.match(/\/\/\s*==UserScript==([\s\S]*?)\/\/\s*==\/UserScript==/);
+    if (!headerMatch) return null;
+
+    const meta = {
+      name: '',
+      version: '1.0.0',
+      description: '',
+      author: '',
+      match: [],
+      include: [],
+      exclude: [],
+      grant: [],
+      runAt: 'document-idle',
+      require: [],
+      resource: [],
+      namespace: '',
+      icon: '',
+      noframes: false,
+    };
+
+    const lines = headerMatch[1].split('\n');
+    for (const line of lines) {
+      const m = line.match(/\/\/\s*@(\S+)\s+(.*)/);
+      if (!m) {
+        // 处理无值的标记（如 @noframes）
+        const flagMatch = line.match(/\/\/\s*@(\S+)\s*$/);
+        if (flagMatch && flagMatch[1] === 'noframes') {
+          meta.noframes = true;
+        }
+        continue;
+      }
+      const key = m[1];
+      const value = m[2].trim();
+
+      switch (key) {
+        case 'name':         meta.name = value; break;
+        case 'version':      meta.version = value; break;
+        case 'description':  meta.description = value; break;
+        case 'author':       meta.author = value; break;
+        case 'namespace':    meta.namespace = value; break;
+        case 'icon':         meta.icon = value; break;
+        case 'match':        meta.match.push(value); break;
+        case 'include':      meta.include.push(value); break;
+        case 'exclude':
+        case 'exclude-match': meta.exclude.push(value); break;
+        case 'grant':        meta.grant.push(value); break;
+        case 'run-at':       meta.runAt = value; break;
+        case 'require':      meta.require.push(value); break;
+        case 'resource':     meta.resource.push(value); break;
+      }
+    }
+
+    // @include 作为 @match 的兼容别名
+    if (meta.match.length === 0 && meta.include.length > 0) {
+      meta.match = meta.include;
+    }
+
+    // grant 中的 'none' 表示不需要任何 GM API
+    if (meta.grant.length === 1 && meta.grant[0] === 'none') {
+      meta.grant = [];
+    }
+
+    // 提取脚本体（==/ UserScript== 标记之后的代码）
+    const endMarkerIndex = source.indexOf('==/UserScript==');
+    const bodyStart = source.indexOf('\n', endMarkerIndex);
+    const body = bodyStart !== -1 ? source.slice(bodyStart + 1) : '';
+
+    return { meta, body };
   }
 
   // ── URL 匹配 ────────────────────────────────────────────────────────────────
@@ -171,6 +293,10 @@ class PluginManager {
    * 读取插件的渲染器脚本
    */
   getPluginRendererSource(plugin) {
+    if (plugin.isUserScript) {
+      return plugin.userScriptBody || null;
+    }
+
     const rendererFile = plugin.manifest.renderer;
     if (!rendererFile) return null;
 
@@ -212,6 +338,13 @@ class PluginManager {
         author: plugin.manifest.author,
       },
       patchVersion: '1.0.0',
+      plugins: this.plugins.map(p => ({
+        name: p.manifest.name,
+        version: p.manifest.version,
+        description: p.manifest.description,
+        enabled: p.manifest.enabled !== false,
+        isUserScript: !!p.isUserScript,
+      })),
     });
 
     const storagePrefix = JSON.stringify('__EM_' + plugin.id + '_');

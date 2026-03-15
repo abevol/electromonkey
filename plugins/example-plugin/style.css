@@ -183,3 +183,15 @@
   color: #25f4ee;
   font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
 }
+
+.dp-plugin-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 500;
+  color: #25f4ee;
+  background: rgba(37, 244, 238, 0.12);
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+  vertical-align: middle;
+}

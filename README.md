@@ -7,7 +7,7 @@ Electron 应用旁载插件框架，提供类似 Tampermonkey 的体验。
 ## 特性
 
 - **零破坏部署** — 原始 `app.asar` 完整保存为 `app-original.asar`，随时可还原
-- **多插件架构** — 每个插件独立目录，含 `manifest.json` 描述
+- **多插件架构** — 每个插件独立目录，含 `manifest.json` 描述；同时支持 Tampermonkey `.user.js` 单文件脚本
 - **URL 匹配** — 支持 Chrome 扩展 match pattern 语法（`*://*.example.com/*`）
 - **GM_\* API** — `GM_getValue`、`GM_setValue`、`GM_addStyle`、`GM_notification`、`GM_xmlhttpRequest` 等
 - **运行时机控制** — `document-start`、`document-end`、`document-idle`
@@ -56,17 +56,18 @@ node scripts/undeploy.js --target /path/to/electron-app/resources
 
 ## 编写插件
 
-在 `plugins/` 目录下创建子目录，包含 `manifest.json` 和脚本文件：
+ElectroMonkey 支持两种插件格式：
 
 ```
 plugins/
-└── my-plugin/
-    ├── manifest.json
-    ├── renderer.js
-    └── style.css
+├── my-plugin/                  # 格式一：目录插件（manifest.json）
+│   ├── manifest.json
+│   ├── renderer.js
+│   └── style.css
+└── my-script.user.js           # 格式二：Tampermonkey .user.js 单文件脚本
 ```
 
-### manifest.json
+### 格式一：目录插件（manifest.json）
 
 ```json
 {
@@ -128,6 +129,45 @@ GM_setValue('visitCount', count);
 GM_log('第', count, '次访问');
 ```
 
+### 格式二：Tampermonkey .user.js 脚本
+
+直接将 `.user.js` 文件放入 `plugins/` 目录即可，无需 `manifest.json`。元数据从 `==UserScript==` 头部自动解析：
+
+```javascript
+// ==UserScript==
+// @name        我的脚本
+// @version     1.0.0
+// @description 脚本描述
+// @author      作者
+// @match       *://*.douyin.com/*
+// @run-at      document-idle
+// @grant       GM_addStyle
+// @grant       GM_getValue
+// @grant       GM_setValue
+// ==/UserScript==
+
+GM_addStyle('body { border: 2px solid blue; }');
+console.log('Hello from userscript!');
+```
+
+支持的 `@` 标签：
+
+| 标签 | 说明 |
+|---|---|
+| `@name` | 脚本名称 |
+| `@version` | 版本号 |
+| `@description` | 描述 |
+| `@author` | 作者 |
+| `@match` | URL 匹配规则（可多次声明） |
+| `@include` | URL 匹配规则（`@match` 的兼容别名） |
+| `@exclude` / `@exclude-match` | URL 排除规则 |
+| `@run-at` | 运行时机：`document-start` \| `document-end` \| `document-idle` |
+| `@grant` | 声明使用的 GM\_\* API（`none` 表示不需要） |
+| `@namespace` | 命名空间（保留字段） |
+| `@noframes` | 不在 iframe 中运行（保留字段） |
+
+> **兼容性说明**：从 Tampermonkey / Greasemonkey 导出的 `.user.js` 脚本可直接放入 `plugins/` 目录使用，只要脚本使用的 GM\_\* API 在上方「可用 GM\_\* API」列表中即可。
+
 ## 工作原理
 
 ```
@@ -157,10 +197,11 @@ electromonkey/
 │   ├── deploy.js           # 部署脚本（asar-patch）
 │   └── undeploy.js         # 卸载脚本（还原 asar）
 ├── plugins/
-│   └── example-plugin/     # 示例插件
-│       ├── manifest.json
-│       ├── renderer.js
-│       └── style.css
+│   ├── example-plugin/     # 示例插件（目录格式）
+│   │   ├── manifest.json
+│   │   ├── renderer.js
+│   │   └── style.css
+│   └── example-userscript.user.js  # 示例脚本（.user.js 格式）
 └── package.json
 ```
 
