@@ -1,8 +1,7 @@
 {
-  "name": "douyin",
-  "version": "7.4.0",
-  "description": "ElectroMonkey Loader",
+  "name": "electromonkey-patch",
+  "version": "1.0.0",
+  "description": "ElectroMonkey runtime patch modules",
   "main": "loader.js",
-  "universal": true,
-  "license": "UNLICENSED"
+  "private": true
 }

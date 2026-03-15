@@ -9,5 +9,8 @@
   },
   "config": {
     "targetApp": "../douyin/7.4.0/resources"
+  },
+  "dependencies": {
+    "@electron/asar": "^4.1.0"
   }
 }
