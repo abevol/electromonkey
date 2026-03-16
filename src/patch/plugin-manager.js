@@ -15,8 +15,10 @@ const fs = require('fs');
 const path = require('path');
 
 class PluginManager {
-  constructor(pluginsDir) {
-    this.pluginsDir = pluginsDir;
+  constructor(pluginsDirs, options) {
+    options = options || {};
+    this.pluginsDirs = Array.isArray(pluginsDirs) ? pluginsDirs : [pluginsDirs];
+    this.mode = options.mode || 'release';
     this.plugins = [];
   }
 
@@ -24,16 +26,23 @@ class PluginManager {
   discoverPlugins() {
     this.plugins = [];
 
-    if (!fs.existsSync(this.pluginsDir)) {
-      console.log('[ElectroMonkey] Plugins directory not found:', this.pluginsDir);
+    for (const pluginsDir of this.pluginsDirs) {
+      this._scanDirectory(pluginsDir);
+    }
+  }
+
+  _scanDirectory(pluginsDir) {
+    if (!fs.existsSync(pluginsDir)) {
+      console.log('[ElectroMonkey] Plugins directory not found:', pluginsDir);
       return;
     }
 
-    const entries = fs.readdirSync(this.pluginsDir, { withFileTypes: true });
+    const entries = fs.readdirSync(pluginsDir, { withFileTypes: true });
+
     for (const entry of entries) {
       if (!entry.isDirectory()) continue;
 
-      const pluginDir = path.join(this.pluginsDir, entry.name);
+      const pluginDir = path.join(pluginsDir, entry.name);
       const manifestPath = path.join(pluginDir, 'manifest.json');
 
       if (!fs.existsSync(manifestPath)) {
@@ -43,13 +52,11 @@ class PluginManager {
 
       try {
         const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
-        // 验证必需字段
         if (!manifest.name || !manifest.version) {
           console.warn('[ElectroMonkey] Skipping (invalid manifest):', entry.name);
           continue;
         }
 
-        // 跳过禁用的插件
         if (manifest.enabled === false) {
           console.log('[ElectroMonkey] Skipping (disabled):', manifest.name);
           continue;
@@ -65,7 +72,7 @@ class PluginManager {
             author: manifest.author || '',
             match: Array.isArray(manifest.match) ? manifest.match : (manifest.match ? [manifest.match] : ['*://*/*']),
             exclude: Array.isArray(manifest.exclude) ? manifest.exclude : (manifest.exclude ? [manifest.exclude] : []),
-            runAt: manifest.runAt || 'document-idle', // document-start | document-end | document-idle
+            runAt: manifest.runAt || 'document-idle',
             enabled: manifest.enabled !== false,
             renderer: manifest.renderer || null,
             main: manifest.main || null,
@@ -80,11 +87,10 @@ class PluginManager {
       }
     }
 
-    // ── .user.js 单文件脚本扫描 ──
     for (const entry of entries) {
       if (entry.isDirectory() || !entry.name.endsWith('.user.js')) continue;
 
-      const filePath = path.join(this.pluginsDir, entry.name);
+      const filePath = path.join(pluginsDir, entry.name);
       try {
         const source = fs.readFileSync(filePath, 'utf-8');
         const parsed = PluginManager.parseUserScriptHeader(source);
@@ -97,7 +103,7 @@ class PluginManager {
 
         this.plugins.push({
           id,
-          dir: this.pluginsDir,
+          dir: pluginsDir,
           isUserScript: true,
           userScriptBody: parsed.body,
           manifest: {
@@ -211,7 +217,7 @@ class PluginManager {
 
   /**
    * 将 match pattern 转换为正则表达式
-   * @param {string} pattern - 如 "*://*.douyin.com/*"
+   * @param {string} pattern - 如 "*://*.*.com/*"
    * @returns {RegExp}
    */
   static matchPatternToRegex(pattern) {
@@ -338,6 +344,7 @@ class PluginManager {
         author: plugin.manifest.author,
       },
       patchVersion: '1.0.0',
+      mode: this.mode,
       plugins: this.plugins.map(p => ({
         name: p.manifest.name,
         version: p.manifest.version,

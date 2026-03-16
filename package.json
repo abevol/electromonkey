@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "deploy": "node scripts/deploy.js",
-    "undeploy": "node scripts/undeploy.js"
+    "undeploy": "node scripts/undeploy.js",
+    "build": "node scripts/build.js"
   },
   "config": {
     "targetApp": "../douyin/7.4.0/resources"

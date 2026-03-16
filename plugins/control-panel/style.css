@@ -212,3 +212,17 @@
   margin-left: 6px;
   vertical-align: middle;
 }
+
+/* DEV 模式标签 */
+.dp-dev-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  background: #fe2c55;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+  vertical-align: middle;
+  letter-spacing: 0.5px;
+}

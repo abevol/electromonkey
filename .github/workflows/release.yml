@@ -21,16 +21,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Create release archive
+      - name: Build release package
         run: |
+          node scripts/build.js
           VERSION="${GITHUB_REF_NAME#v}"
-          mkdir -p dist
-          tar czf "dist/electromonkey-${VERSION}.tar.gz" \
-            --exclude='node_modules' \
-            --exclude='.git' \
-            --exclude='dist' \
-            src/ plugins/ scripts/ package.json package-lock.json README.md AGENTS.md
-          cd dist && sha256sum "electromonkey-${VERSION}.tar.gz" > checksums.txt
+          cd dist && zip -r "electromonkey-${VERSION}.zip" electromonkey/
+          sha256sum "electromonkey-${VERSION}.zip" > checksums.txt
 
       - name: Extract changelog from tag
         id: changelog
@@ -48,6 +44,6 @@ jobs:
         with:
           body: ${{ steps.changelog.outputs.body }}
           files: |
-            dist/electromonkey-*.tar.gz
+            dist/electromonkey-*.zip
             dist/checksums.txt
           generate_release_notes: true

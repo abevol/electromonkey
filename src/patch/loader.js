@@ -20,12 +20,19 @@ try {
   const PluginManager = require('./plugin-manager');
 
   // ── 路径常量 ────────────────────────────────────────────────────────────────
-  // loader.js 位于 electromonkey/src/patch/
-  // 插件位于   electromonkey/plugins/
+  // dev 模式: loader.js 位于 src/patch/，上两级 = 项目根
+  // release 模式: ELECTROMONKEY_ROOT 由 bootstrap 设置，指向 %LOCALAPPDATA%/ElectroMonkey
   const PATCH_DIR = __dirname;
-  const PROJECT_ROOT = path.resolve(PATCH_DIR, '..', '..');
-  const PLUGINS_DIR = path.join(PROJECT_ROOT, 'plugins');
+  const PROJECT_ROOT = process.env.ELECTROMONKEY_ROOT
+    || path.resolve(PATCH_DIR, '..', '..');
+  const MODE = process.env.ELECTROMONKEY_MODE || 'dev';
+  const PLUGINS_DIRS = [path.join(PROJECT_ROOT, 'plugins')];
   const PRELOAD_INJECT = path.join(PATCH_DIR, 'preload-inject.js');
+
+  // 开发模式：添加外部插件目录（不受 Git 管控）
+  if (MODE === 'dev' && process.env.LOCALAPPDATA) {
+    PLUGINS_DIRS.push(path.join(process.env.LOCALAPPDATA, 'ElectroMonkeyDev', 'plugins'));
+  }
 
   // ── 加载高清 LOGO ──────────────────────────────────────────────────────────
   // 从 assets/icon.png 读取 256px 原图，覆盖 PluginManager 上的缩略图默认值
@@ -41,7 +48,7 @@ try {
   }
 
   // ── 初始化插件管理器 ────────────────────────────────────────────────────────
-  const pluginManager = new PluginManager(PLUGINS_DIR);
+  const pluginManager = new PluginManager(PLUGINS_DIRS, { mode: MODE });
   pluginManager.discoverPlugins();
 
   // ── 全局引用 ────────────────────────────────────────────────────────────────
@@ -49,6 +56,7 @@ try {
     pluginManager,
     patchDir: PATCH_DIR,
     projectRoot: PROJECT_ROOT,
+    mode: MODE,
     version: '1.0.0',
   };
 
@@ -136,8 +144,9 @@ try {
 
   // ── 启动完成 ────────────────────────────────────────────────────────────────
   // NODE_OPTIONS 模式下原应用自动加载，无需手动 require
-  console.log('[ElectroMonkey] Loader initialized (asar-patch mode)');
+  console.log('[ElectroMonkey] Loader initialized (' + MODE + ' mode)');
   console.log('[ElectroMonkey] Project root:', PROJECT_ROOT);
+  console.log('[ElectroMonkey] Plugin dirs:', PLUGINS_DIRS.join(', '));
   console.log('[ElectroMonkey] Plugins loaded:', pluginManager.plugins.length);
 
 } catch (err) {

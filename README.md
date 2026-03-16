@@ -6,19 +6,39 @@
 
 <p align="center">Electron 应用旁载插件框架，提供类似 Tampermonkey 的体验。</p>
 
-通过 asar-patch 技术将插件系统注入到已发布的 Electron 应用中，支持多插件管理、URL 匹配、GM_\* API、CSS/JS 注入，且不破坏原始应用文件（可一键还原）。
+通过 asar-patch 技术将插件系统注入到已发布的 Electron 应用中，支持多插件管理、URL 匹配、GM\_\* API、CSS/JS 注入，且不破坏原始应用文件（可一键还原）。
 
 ## 特性
 
 - **零破坏部署** — 原始 `app.asar` 完整保存为 `app-original.asar`，随时可还原
 - **多插件架构** — 每个插件独立目录，含 `manifest.json` 描述；同时支持 Tampermonkey `.user.js` 单文件脚本
 - **URL 匹配** — 支持 Chrome 扩展 match pattern 语法（`*://*.example.com/*`）
-- **GM_\* API** — `GM_getValue`、`GM_setValue`、`GM_addStyle`、`GM_notification`、`GM_xmlhttpRequest` 等
+- **GM\_\* API** — `GM_getValue`、`GM_setValue`、`GM_addStyle`、`GM_notification`、`GM_xmlhttpRequest` 等
 - **运行时机控制** — `document-start`、`document-end`、`document-idle`
 - **主进程插件** — 支持 `main` 入口，可访问 Electron 主进程 API
 - **自动降级** — BrowserWindow 补丁失败时自动切换到 `web-contents-created` 注入
+- **双模式架构** — 开发模式（需 Node.js）与发布模式（免安装，运行 PowerShell 脚本即可）
 
-## 快速开始
+## 普通用户安装
+
+无需 Node.js，无需命令行。
+
+1. 从 [Releases](https://github.com/abevol/electromonkey/releases) 下载最新的 `electromonkey-x.x.x.zip`
+2. 解压到任意位置
+3. 右键 `install.ps1` → 选择「使用 PowerShell 运行」，按提示输入目标路径（目标 Electron 应用的 `resources` 目录）
+4. 正常启动目标应用即可
+
+也可在 PowerShell 中直接运行：
+
+```powershell
+.\install.ps1 "C:\Users\你的用户名\AppData\Local\SomeApp\1.0.0\resources"
+```
+
+卸载：右键 `uninstall.ps1` → 选择「使用 PowerShell 运行」，应用恢复为原始状态。
+
+> **插件目录**：安装后插件存放在 `%LOCALAPPDATA%\ElectroMonkey\plugins\`，将 `.user.js` 脚本或插件文件夹放入即可生效。
+
+## 开发者使用
 
 ### 安装
 
@@ -43,20 +63,37 @@ npm install
 ### 部署 / 卸载
 
 ```bash
-npm run deploy     # 部署插件框架（使用 package.json 中配置的目标路径）
+npm run deploy     # 部署插件框架（开发模式）
 npm run undeploy   # 还原原始应用
 ```
 
-也可以通过 `--target` 参数指定目标应用的 `resources` 目录，覆盖 `package.json` 中的默认配置：
+也可以通过 `--target` 参数指定目标：
 
 ```bash
 node scripts/deploy.js --target /path/to/electron-app/resources
-node scripts/undeploy.js --target /path/to/electron-app/resources
 ```
 
 > **路径解析优先级**：`--target` 参数 > `package.json` 中的 `config.targetApp`
 
-部署后直接启动目标应用即可，无需特殊启动器。
+部署后直接启动目标应用即可，无需特殊启动器。控制面板标题会显示 **DEV** 标签以区分开发模式。
+
+### 外部插件目录
+
+开发模式下，除了 git 仓库内的 `plugins/` 目录，还会扫描以下目录：
+
+```
+%LOCALAPPDATA%\ElectroMonkeyDev\plugins\
+```
+
+此目录不受 Git 管控，适合放置开发测试用的插件。
+
+### 构建发布包
+
+```bash
+npm run build    # 构建到 dist/electromonkey/
+```
+
+生成的 `dist/electromonkey/` 包含 `install.ps1`、`uninstall.ps1`、预构建的 `bootstrap.asar` 及所有运行时文件，可直接打包为 zip 发布。
 
 ## 编写插件
 
@@ -98,10 +135,10 @@ plugins/
 | `renderer` | 渲染器脚本文件名 |
 | `css` | 样式文件名 |
 | `main` | 主进程脚本（可选，需导出 `activate(context)` 函数） |
-| `grant` | 声明使用的 GM_\* API |
+| `grant` | 声明使用的 GM\_\* API |
 | `enabled` | 是否启用 |
 
-### 可用 GM_\* API
+### 可用 GM\_\* API
 
 | API | 说明 |
 |---|---|
@@ -143,7 +180,7 @@ GM_log('第', count, '次访问');
 // @version     1.0.0
 // @description 脚本描述
 // @author      作者
-// @match       *://*.douyin.com/*
+// @match       *://*.*.com/*
 // @run-at      document-idle
 // @grant       GM_addStyle
 // @grant       GM_getValue
@@ -176,10 +213,12 @@ console.log('Hello from userscript!');
 
 ```
 目标应用启动
-  → 加载 app.asar（极简引导，2KB）
+  → 加载 app.asar（极简引导，~1KB）
     → index.js:
-      1. require(loader.js)     ← ElectroMonkey 注入
-      2. require(app-original.asar)  ← 原始应用正常启动
+      1. 从 app-original.asar 读取 package.json，恢复 app.name 和 version
+      2. 设置 ELECTROMONKEY_MODE + ELECTROMONKEY_ROOT（release 模式）
+      3. require(loader.js)     ← ElectroMonkey 注入
+      4. require(app-original.asar)  ← 原始应用正常启动
 ```
 
 ### 注入流程
@@ -188,26 +227,39 @@ console.log('Hello from userscript!');
 2. 如果 BrowserWindow 为 non-configurable（如 tt_electron），自动降级到 `web-contents-created` 钩子
 3. 在 `dom-ready` 事件中，通过 `executeJavaScript` 和 `insertCSS` 注入匹配当前 URL 的插件
 
+### 双模式对比
+
+| | 开发模式 | 发布模式 |
+|---|---|---|
+| 触发方式 | `npm run deploy` | `install.ps1` |
+| 依赖 | Node.js + npm | 无 |
+| 运行时位置 | git 仓库 `src/patch/` | `%LOCALAPPDATA%\ElectroMonkey\runtime\` |
+| 插件目录 | 仓库 `plugins/` + `%LOCALAPPDATA%\ElectroMonkeyDev\plugins\` | `%LOCALAPPDATA%\ElectroMonkey\plugins\` |
+| 控制面板标识 | 显示 **DEV** 标签 | 无标签 |
+
 ## 项目结构
 
 ```
 electromonkey/
 ├── src/patch/
-│   ├── loader.js           # 主进程注入器
-│   ├── plugin-manager.js   # 插件管理（发现、匹配、GM_* API 构建）
+│   ├── loader.js           # 主进程注入器（模式感知路径解析）
+│   ├── plugin-manager.js   # 插件管理（多目录发现、匹配、GM_* API 构建）
 │   ├── preload-inject.js   # 渲染器 preload 链式注入
 │   └── package.json
 ├── scripts/
-│   ├── deploy.js           # 部署脚本（asar-patch）
-│   └── undeploy.js         # 卸载脚本（还原 asar）
+│   ├── deploy.js           # 开发模式部署脚本
+│   ├── undeploy.js         # 开发模式卸载脚本
+│   ├── build.js            # 构建发布包
+│   ├── install.ps1         # 发布模式安装脚本 (PowerShell)
+│   └── uninstall.ps1       # 发布模式卸载脚本 (PowerShell)
 ├── assets/
 │   └── icon.png            # 应用图标
 ├── plugins/
-│   ├── control-panel/      # ElectroMonkey 控制面板（目录格式）
+│   ├── control-panel/      # ElectroMonkey 控制面板
 │   │   ├── manifest.json
 │   │   ├── renderer.js
 │   │   └── style.css
-│   └── example-userscript.user.js  # 示例脚本（.user.js 格式）
+│   └── *.user.js           # 示例脚本
 └── package.json
 ```
 

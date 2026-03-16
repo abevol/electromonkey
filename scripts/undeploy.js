@@ -50,21 +50,6 @@ function main() {
     restored = true;
   }
 
-  // 清理旧方案残留 (resources/app/)
-  const oldAppDir = path.join(targetResources, 'app');
-  if (fs.existsSync(oldAppDir) && fs.existsSync(path.join(oldAppDir, 'loader.js'))) {
-    fs.rmSync(oldAppDir, { recursive: true, force: true });
-    console.log('🗑  清理旧 resources/app/ 残留');
-    restored = true;
-  }
-
-  // 清理旧 NODE_OPTIONS 方案残留
-  const douyinDir = path.dirname(path.dirname(targetResources));
-  for (const name of ['douyin-patched.cmd', 'douyin-patched.ps1']) {
-    const p = path.join(douyinDir, name);
-    if (fs.existsSync(p)) { fs.unlinkSync(p); console.log('🗑  清理旧启动器:', name); restored = true; }
-  }
-
   if (!restored) {
     console.log('ℹ  未发现 ElectroMonkey 部署，无需卸载。');
     return;
@@ -73,8 +58,7 @@ function main() {
   console.log('');
   console.log('═══════════════════════════════════════════════════════');
   console.log('  ✅ ElectroMonkey 卸载完成');
-  console.log('  🔄 应用已恢复为原始状态');
-  console.log('  💡 直接运行 douyin.exe 即可启动原版应用');
+  console.log('  💡 应用已恢复为原始状态');
   console.log('═══════════════════════════════════════════════════════');
 }
 

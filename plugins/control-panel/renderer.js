@@ -2,7 +2,7 @@
     // @name        ElectroMonkey 控制面板
     // @version     1.0.0
     // @description ElectroMonkey 控制面板：状态浮标、插件管理、快捷键面板
-    // @match       *://*.douyin.com/*
+    // @match       *://*
     // @run-at      document-idle
     // ==/ElectroMonkey==
 
@@ -58,7 +58,7 @@
       panel.id = 'em-panel';
       panel.innerHTML = [
         '\u003cdiv class="dp-panel-header"\u003e',
-        '  \u003cspan class="dp-panel-title"\u003e\u003cimg src="' + window.__ELECTROMONKEY_LOGO__ + '" class="dp-panel-icon"\u003e ElectroMonkey 控制面板\u003c/span\u003e',
+        '  \u003cspan class="dp-panel-title"\u003e\u003cimg src="' + window.__ELECTROMONKEY_LOGO__ + '" class="dp-panel-icon"\u003e ElectroMonkey 控制面板' + (GM_info.mode === 'dev' ? ' \u003cspan class="dp-dev-tag"\u003eDEV\u003c/span\u003e' : '') + '\u003c/span\u003e',
         '  \u003cbutton class="dp-panel-close"\u003e\u2715\u003c/button\u003e',
         '\u003c/div\u003e',
         '\u003cdiv class="dp-panel-body"\u003e',

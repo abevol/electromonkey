@@ -62,16 +62,12 @@ async function main() {
     }
   }
 
-  // 从原始 asar 中提取 package.json（保留应用元数据）
-  const origPkgJson = asar.extractFile(asarPath, 'package.json').toString('utf-8');
-
   const loaderPath = path.join(ROOT, 'src', 'patch', 'loader.js');
   if (!fs.existsSync(loaderPath)) {
     console.error('错误：未找到 loader.js:', loaderPath);
     process.exit(1);
   }
 
-  // 备份原始文件
   console.log('📦 备份 app.asar → app-original.asar');
   fs.renameSync(asarPath, origAsarPath);
   if (fs.existsSync(unpackedPath)) {
@@ -79,38 +75,26 @@ async function main() {
     fs.renameSync(unpackedPath, origUnpackedPath);
   }
 
-  // 构建引导 index.js — 加载 ElectroMonkey 后 require 原始应用
   const winLoaderPath = toRequirePath(loaderPath);
   const bootstrapIndex = [
     "'use strict';",
+    "process.env.ELECTROMONKEY_MODE = 'dev';",
     "var path = require('path');",
     "var origAsar = path.join(path.dirname(__dirname), 'app-original.asar');",
+    "try { var _p = require(path.join(origAsar, 'package.json')), _a = require('electron').app; if (_p.productName) _a.name = _p.productName; else if (_p.name) _a.name = _p.name; if (_p.version) _a.setVersion(_p.version); } catch(e) {}",
     "try { require('" + winLoaderPath + "'); } catch(e) { console.error('[ElectroMonkey] Loader error:', e.message, e.stack); }",
     "try { require('electron').app.getAppPath = function() { return origAsar; }; } catch(e) {}",
     "require(origAsar);",
   ].join('\n');
 
-  // 创建极简引导 asar（仅 package.json + index.js）
   console.log('🔨 创建引导 asar...');
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'electromonkey-'));
   try {
-    fs.writeFileSync(path.join(tempDir, 'package.json'), origPkgJson);
+    fs.writeFileSync(path.join(tempDir, 'package.json'), JSON.stringify({ main: 'index.js' }));
     fs.writeFileSync(path.join(tempDir, 'index.js'), bootstrapIndex);
     await asar.createPackage(tempDir, asarPath);
   } finally {
     fs.rmSync(tempDir, { recursive: true, force: true });
-  }
-
-  // 清理旧方案残留
-  const oldAppDir = path.join(targetResources, 'app');
-  if (fs.existsSync(oldAppDir) && fs.existsSync(path.join(oldAppDir, 'loader.js'))) {
-    fs.rmSync(oldAppDir, { recursive: true, force: true });
-    console.log('🗑  清理旧 resources/app/ 残留');
-  }
-  const douyinDir = path.dirname(path.dirname(targetResources));
-  for (const name of ['douyin-patched.cmd', 'douyin-patched.ps1']) {
-    const p = path.join(douyinDir, name);
-    if (fs.existsSync(p)) { fs.unlinkSync(p); console.log('🗑  清理旧启动器:', name); }
   }
 
   console.log('');
@@ -120,7 +104,7 @@ async function main() {
   console.log('  📦 原始备份: app-original.asar');
   console.log('  🔨 引导 asar: app.asar (极简引导)');
   console.log('');
-  console.log('  🚀 使用: 正常启动 douyin.exe 即可');
+  console.log('  🚀 使用: 正常启动目标应用即可');
   console.log('  📋 卸载: npm run undeploy');
   console.log('');
   console.log('  💡 原理: 用极简引导 asar 替换 app.asar，');
