@@ -6,7 +6,7 @@ ElectroMonkey is a sideloading plugin framework for Electron applications. It pr
 
 ## Dual-Mode Architecture
 
-ElectroMonkey operates in two mutually exclusive modes. Only one can be active at a time (they share the same `app.asar` slot).
+ElectroMonkey operates in two mutually exclusive modes. Only one can be active at a time (they share the same asar slot).
 
 ### Dev Mode (`npm run deploy`)
 
@@ -78,9 +78,9 @@ Dev external plugin directory (not in git):
 
 ## Injection Mechanism (asar-patch)
 
-1. `deploy.js` (dev) or `install.ps1` (release) renames `app.asar` → `app-original.asar`
-2. Replaces with a tiny bootstrap `app.asar` containing only `index.js` + `package.json` (`{ "main": "index.js" }`)
-3. Bootstrap `index.js` dynamically reads `app-original.asar/package.json` to restore `app.name` and `app.setVersion()`, sets `ELECTROMONKEY_MODE` + `ELECTROMONKEY_ROOT` (release only), then `require(loader.js)` → `require(app-original.asar)`
+1. `deploy.js` (dev) or `install.ps1` (release) backs up the target asar (e.g. `app.asar` → `app-em-backup.asar`)
+2. Replaces the target asar with a tiny bootstrap asar containing only `index.js` + `package.json` (`{ "main": "index.js" }`)
+3. Bootstrap `index.js` scans its parent directory for `*-em-backup.asar` to locate the original backup, reads its `package.json` to restore `app.name` and `app.setVersion()`, sets `ELECTROMONKEY_MODE` + `ELECTROMONKEY_ROOT` (release only), then `require(loader.js)` → `require(*-em-backup.asar)`
 4. `loader.js` patches BrowserWindow (with fallback) and registers `web-contents-created` hooks
 5. Target app launches normally with plugins injected
 
@@ -148,4 +148,4 @@ npm run undeploy  # Dev mode: restore original asar
 npm run build     # Build release package into dist/
 ```
 
-The `config.targetApp` field in `package.json` points to the target app's `resources/` directory (dev mode only).
+The `config.targetApp` field in `package.json` points to the target app's asar file (e.g. `../douyin/7.4.0/resources/app.asar`), used by dev mode scripts. The backup naming convention is `*-em-backup.asar` (e.g. `app.asar` → `app-em-backup.asar`).

@@ -3,12 +3,12 @@
 .SYNOPSIS
     ElectroMonkey 卸载脚本
 .DESCRIPTION
-    恢复目标 Electron 应用的原始 app.asar，并清理 ElectroMonkey 运行时文件。
+    恢复目标 Electron 应用的原始 asar，并清理 ElectroMonkey 运行时文件。
     插件目录默认保留，如需完全删除请手动删除 %LOCALAPPDATA%\ElectroMonkey。
 .PARAMETER TargetPath
-    目标 Electron 应用的 resources 目录路径（包含 app-original.asar 的目录）。
+    目标 Electron 应用的 asar 文件路径（如 app.asar，当前为 ElectroMonkey 引导程序）。
 .EXAMPLE
-    .\uninstall.ps1 "C:\Users\你的用户名\AppData\Local\SomeApp\1.0.0\resources"
+    .\uninstall.ps1 "C:\Users\你的用户名\AppData\Local\SomeApp\1.0.0\resources\app.asar"
 #>
 param(
     [Parameter(Position = 0)]
@@ -33,9 +33,9 @@ $InstallDir = Join-Path $env:LOCALAPPDATA "ElectroMonkey"
 # ── 验证目标路径 ──
 
 if (-not $TargetPath) {
-    Write-Host "路径应指向目标 Electron 应用的 resources 目录（包含 app-original.asar 的目录）。" -ForegroundColor Gray
+    Write-Host "路径应指向目标 Electron 应用的 asar 文件（如 app.asar）。" -ForegroundColor Gray
     Write-Host ""
-    $TargetPath = Read-Host "请输入目标路径"
+    $TargetPath = Read-Host "请输入目标 asar 文件路径"
     $TargetPath = $TargetPath.Trim('"', "'", ' ')
     if (-not $TargetPath) {
         Write-Err "错误：未指定目标路径。"
@@ -45,42 +45,48 @@ if (-not $TargetPath) {
     }
 }
 
-$resolved = Resolve-Path -LiteralPath $TargetPath -ErrorAction SilentlyContinue
-if ($resolved) { $TargetPath = $resolved.Path }
+# 从 asar 文件路径推导各路径
+$AsarName = [System.IO.Path]::GetFileName($TargetPath)
+$ResourcesDir = Split-Path -Parent $TargetPath
+$BaseName = $AsarName -replace '\.asar$', ''
+$BackupName = "${BaseName}-em-backup.asar"
+
+$resolved = Resolve-Path -LiteralPath $ResourcesDir -ErrorAction SilentlyContinue
+if ($resolved) { $ResourcesDir = $resolved.Path }
 if (-not $resolved) {
-    Write-Err "错误：指定的路径不存在: $TargetPath"
+    Write-Err "错误：指定的路径不存在: $ResourcesDir"
     Read-Host "按 Enter 键退出"
     exit 1
 }
 
-$OrigAsarPath = Join-Path $TargetPath "app-original.asar"
+$AsarPath = Join-Path $ResourcesDir $AsarName
+$BackupAsarPath = Join-Path $ResourcesDir $BackupName
 
-if (-not (Test-Path $OrigAsarPath)) {
-    Write-Err "错误：未找到 app-original.asar: $OrigAsarPath"
+if (-not (Test-Path $BackupAsarPath)) {
+    Write-Err "错误：未找到 ${BackupName}: $BackupAsarPath"
     Write-Host "未检测到 ElectroMonkey 安装。" -ForegroundColor Gray
     Read-Host "按 Enter 键退出"
     exit 1
 }
 
-Write-Host "找到目标: $TargetPath"
+Write-Host "找到目标: $AsarPath"
 Write-Host ""
 
 # ── [1/2] 恢复原始 asar ──
 
 Write-Step "[1/2] 恢复原始应用..."
 
-$AsarPath = Join-Path $TargetPath "app.asar"
-$UnpackedPath = Join-Path $TargetPath "app.asar.unpacked"
-$OrigUnpackedPath = Join-Path $TargetPath "app-original.asar.unpacked"
+$UnpackedPath = Join-Path $ResourcesDir "${AsarName}.unpacked"
+$BackupUnpackedPath = Join-Path $ResourcesDir "${BackupName}.unpacked"
 
 if (Test-Path $AsarPath) { Remove-Item $AsarPath -Force }
-Move-Item $OrigAsarPath $AsarPath -Force
-Write-Ok "app.asar 已恢复"
+Move-Item $BackupAsarPath $AsarPath -Force
+Write-Ok "$AsarName 已恢复"
 
-if (Test-Path $OrigUnpackedPath) {
+if (Test-Path $BackupUnpackedPath) {
     if (Test-Path $UnpackedPath) { Remove-Item $UnpackedPath -Recurse -Force }
-    Move-Item $OrigUnpackedPath $UnpackedPath -Force
-    Write-Ok "app.asar.unpacked 已恢复"
+    Move-Item $BackupUnpackedPath $UnpackedPath -Force
+    Write-Ok "${AsarName}.unpacked 已恢复"
 }
 
 # ── [2/2] 清理运行时 ──

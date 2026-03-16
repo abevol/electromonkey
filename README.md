@@ -10,7 +10,7 @@
 
 ## 特性
 
-- **零破坏部署** — 原始 `app.asar` 完整保存为 `app-original.asar`，随时可还原
+- **零破坏部署** — 原始 asar 完整保存为 `*-em-backup.asar`，随时可还原
 - **多插件架构** — 每个插件独立目录，含 `manifest.json` 描述；同时支持 Tampermonkey `.user.js` 单文件脚本
 - **URL 匹配** — 支持 Chrome 扩展 match pattern 语法（`*://*.example.com/*`）
 - **GM\_\* API** — `GM_getValue`、`GM_setValue`、`GM_addStyle`、`GM_notification`、`GM_xmlhttpRequest` 等
@@ -25,13 +25,13 @@
 
 1. 从 [Releases](https://github.com/abevol/electromonkey/releases) 下载最新的 `electromonkey-x.x.x.zip`
 2. 解压到任意位置
-3. 右键 `install.ps1` → 选择「使用 PowerShell 运行」，按提示输入目标路径（目标 Electron 应用的 `resources` 目录）
+3. 右键 `install.ps1` → 选择「使用 PowerShell 运行」，按提示输入目标 asar 文件路径（如 `app.asar`）
 4. 正常启动目标应用即可
 
 也可在 PowerShell 中直接运行：
 
 ```powershell
-.\install.ps1 "C:\Users\你的用户名\AppData\Local\SomeApp\1.0.0\resources"
+.\install.ps1 "C:\Users\你的用户名\AppData\Local\SomeApp\1.0.0\resources\app.asar"
 ```
 
 卸载：右键 `uninstall.ps1` → 选择「使用 PowerShell 运行」，应用恢复为原始状态。
@@ -50,12 +50,12 @@ npm install
 
 ### 配置目标应用
 
-编辑 `package.json` 中的 `config.targetApp`，指向目标 Electron 应用的 `resources` 目录：
+编辑 `package.json` 中的 `config.targetApp`，指向目标 Electron 应用的 asar 文件：
 
 ```json
 {
   "config": {
-    "targetApp": "../douyin/7.4.0/resources"
+    "targetApp": "../douyin/7.4.0/resources/app.asar"
   }
 }
 ```
@@ -70,7 +70,7 @@ npm run undeploy   # 还原原始应用
 也可以通过 `--target` 参数指定目标：
 
 ```bash
-node scripts/deploy.js --target /path/to/electron-app/resources
+node scripts/deploy.js --target /path/to/electron-app/resources/app.asar
 ```
 
 > **路径解析优先级**：`--target` 参数 > `package.json` 中的 `config.targetApp`
@@ -215,10 +215,11 @@ console.log('Hello from userscript!');
 目标应用启动
   → 加载 app.asar（极简引导，~1KB）
     → index.js:
-      1. 从 app-original.asar 读取 package.json，恢复 app.name 和 version
-      2. 设置 ELECTROMONKEY_MODE + ELECTROMONKEY_ROOT（release 模式）
-      3. require(loader.js)     ← ElectroMonkey 注入
-      4. require(app-original.asar)  ← 原始应用正常启动
+      1. 扫描同级目录，找到 *-em-backup.asar（原始应用备份）
+      2. 从备份 asar 读取 package.json，恢复 app.name 和 version
+      3. 设置 ELECTROMONKEY_MODE + ELECTROMONKEY_ROOT（release 模式）
+      4. require(loader.js)     ← ElectroMonkey 注入
+      5. require(*-em-backup.asar)  ← 原始应用正常启动
 ```
 
 ### 注入流程

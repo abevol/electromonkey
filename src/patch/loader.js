@@ -6,9 +6,9 @@
  * 注入方式：asar-patch（引导 asar 的 index.js require 本文件）
  *
  * 原理：
- *   deploy 脚本将原始 app.asar 重命名为 app-original.asar，
+ *   deploy 脚本将原始 asar 备份为 *-em-backup.asar，
  *   用一个极简引导 asar 替代，其 index.js 先 require 本文件完成注入，
- *   再 require 原始 asar 启动真正的应用。
+ *   再 require 备份 asar 启动真正的应用。
  */
 
 // 仅在主进程中执行（防止被子进程意外加载）
