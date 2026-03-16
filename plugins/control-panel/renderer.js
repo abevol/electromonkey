@@ -19,7 +19,7 @@
     // ── 2. 状态浮标 ──────────────────────────────────────────────────────────
     var badge = document.createElement('div');
     badge.id = 'em-badge';
-    badge.innerHTML = '<img src="' + window.__ELECTROMONKEY_LOGO__ + '" style="width:20px;height:20px;vertical-align:middle"> <span>ElectroMonkey</span>';
+    badge.innerHTML = '<img src="' + window.__ELECTROMONKEY_LOGO__ + '" style="width:24px;height:24px;vertical-align:middle"> <span>ElectroMonkey</span>';
     document.body.appendChild(badge);
 
     // 点击浮标切换面板
