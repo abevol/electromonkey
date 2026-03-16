@@ -29,6 +29,13 @@
 
     // ── 3. 插件管理面板 ──────────────────────────────────────────────────────
     var panelVisible = GM_getValue('panelVisible', false);
+    var URL_DISPLAY_MAX_LENGTH = 32;
+
+    function truncateMiddle(str, max) {
+      if (str.length <= max) return str;
+      var keep = Math.floor((max - 1) / 2);
+      return str.slice(0, keep) + '…' + str.slice(str.length - keep);
+    }
 
     function buildPluginListHTML() {
       var list = GM_info.plugins || [GM_info.script];
@@ -58,7 +65,7 @@
         '  \u003cdiv class="dp-section"\u003e',
         '    \u003cdiv class="dp-section-title"\u003e框架信息\u003c/div\u003e',
         '    \u003cdiv class="dp-info-row"\u003e\u003cspan\u003e版本\u003c/span\u003e\u003cspan\u003ev' + GM_info.patchVersion + '\u003c/span\u003e\u003c/div\u003e',
-        '    \u003cdiv class="dp-info-row"\u003e\u003cspan\u003e当前页面\u003c/span\u003e\u003cspan class="dp-url"\u003e' + location.hostname + location.pathname.slice(0, 30) + '\u003c/span\u003e\u003c/div\u003e',
+        '    \u003cdiv class="dp-info-row"\u003e\u003cspan\u003e当前页面\u003c/span\u003e\u003cspan class="dp-url" id="dp-current-url"\u003e' + truncateMiddle(location.hostname + location.pathname, URL_DISPLAY_MAX_LENGTH) + '\u003c/span\u003e\u003c/div\u003e',
         '    \u003cdiv class="dp-info-row"\u003e\u003cspan\u003e插件总数\u003c/span\u003e\u003cspan\u003e' + (GM_info.plugins ? GM_info.plugins.length : 1) + '\u003c/span\u003e\u003c/div\u003e',
         '  \u003c/div\u003e',
         '  \u003cdiv class="dp-section"\u003e',
@@ -84,6 +91,14 @@
         togglePanel(false);
       });
 
+      panel.querySelector('#dp-current-url').addEventListener('click', function() {
+        GM_setClipboard(location.href);
+        var original = this.textContent;
+        this.textContent = '已复制 ✓';
+        var self = this;
+        setTimeout(function() { self.textContent = original; }, 1200);
+      });
+
       return panel;
     }
 
@@ -96,6 +111,9 @@
       panel.style.display = panelVisible ? 'flex' : 'none';
 
       if (panelVisible) {
+        var urlEl = document.getElementById('dp-current-url');
+        if (urlEl) urlEl.textContent = truncateMiddle(location.hostname + location.pathname, URL_DISPLAY_MAX_LENGTH);
+
         // 更新打开次数（演示 GM_setValue/GM_getValue）
         var count = GM_getValue('openCount', 0) + 1;
         GM_setValue('openCount', count);
@@ -125,5 +143,23 @@
         if (b) b.style.display = b.style.display === 'none' ? 'flex' : 'none';
       }
     });
+
+    // ── 5. URL 变化自动刷新 ─────────────────────────────────────────────────
+    function updateCurrentUrl() {
+      var el = document.getElementById('dp-current-url');
+      if (el) el.textContent = truncateMiddle(location.hostname + location.pathname, URL_DISPLAY_MAX_LENGTH);
+    }
+
+    var origPushState = history.pushState;
+    var origReplaceState = history.replaceState;
+    history.pushState = function() {
+      origPushState.apply(this, arguments);
+      updateCurrentUrl();
+    };
+    history.replaceState = function() {
+      origReplaceState.apply(this, arguments);
+      updateCurrentUrl();
+    };
+    window.addEventListener('popstate', updateCurrentUrl);
 
     GM_log('控制面板初始化完成');
