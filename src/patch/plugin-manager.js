@@ -403,7 +403,7 @@ class PluginManager {
     if (typeof details === 'string') details = { text: details };
     var n = new Notification(details.title || __pluginName, {
       body: details.text || '',
-      icon: details.image || undefined,
+      icon: details.image || window.__ELECTROMONKEY_LOGO__,
     });
     if (details.onclick) n.onclick = details.onclick;
     if (details.timeout) setTimeout(function() { n.close(); }, details.timeout);
@@ -501,5 +501,7 @@ ${source}
     }
   }
 }
+
+PluginManager.LOGO_DATA_URI = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAFhUlEQVR42q2WW2xU1xWGv33OmTkzZ2Z8Hceei8e2wInrFMeYSwBTHGMHROUEocgtkagqKtRGiVQlUqU+tX1pq4hIfUGtlJYqavJQtWpFaUjTCIEM5SYQYBtjZ4zBGF+G8d1jj+dyLrsPNlWbEpxe9tveS3ut9a+91v9v+GJLAKiPOfs/rB8pABh1e3j64Fme2X8af+2uVaPyv3oXSCmAkKf9u0tHb6dl0XsJSf0ryUIoWrU9EckaGXQqKEICNda6Rt9Nw7DylRU2oeqnFiCMosi1AqhPDtAPLS0a8/MpZzq9t28mEDZ7rylcPnEBb/7nLG2SMOL8l9XpVB+9pAKgrnuhcmOHLKlrkxDcpPxL6p3qf4Jg1We/Ayjo9a2ydN03lGDpd4Turcw4Go4/UOto4SryhRbO1Cj0y5VmOCcf236f3SsCSWz3QZdL+36sKtZYVl6GprmRjkVpQZbEnB+cDA8TScbGxq+CeNu5d/qEXAHrfB4CBVrUzt+/I253PfiVyzB+0v5ia0Vxkd8By04vm7z5cp8Il80SHzVsVdOdaKRcxKqqonfjd76OPxJkaewv0KLBCID8pwCdKvQ7ghHndtfou3WNzx6prvCZi5mc0Fyqks44Sk1FShxqG6KpJsWZmxXKbEpVhJAiOT5ur48VO47Lv20x6wuI5Yt/XXG+UjL1Ub1bWl73319SjjxVFf3Bm2+9YWker3bq5ClFc3vJLKd4MOVDqh5OXo7QddONnZthZmqee0ODyqHD3xLPbWywr9/o2WkasTvb9h4YGut/2wTECgXEdrbZlnLcV1RQHYuUO9u3b1Wmx0Zob26ipKSQ5Mw8F6728GDyIcs5nc11YbY21lMU8DE6nuT81dsUlJVz5co1ZyL5ULHSuSEEh0lcvCAMqFhufu1W8769weWuE9Z01taWZmdAWoQjIVQgVFZKQ/167o9OorsVigt8XO8bIrW0hCUlo2MJPLoPo6iQmlLDSm3t0LrfPz5aHP9wg5bVwq+woTm4YWODdePCn7VUeoGFhRTYeeYsL9Xffotgz8e887PfYAT95HI5bEtj/6sv0aN/ifTxH4OukM7kwKNTGAhpNdub7e7LNyvT8fPtiqPqMbyGc6u7V0wkp1AVBd0wUAWoXi/PtLXSfuwo1DWxPJHATk7CiwfZd/R7RBu3oLg1FCHwGgZIh6HhEeIDcSgsdixclZrimL1O/IYSeLbD9Hp0JZXOiWg0wt2hDCTv8cmxD/ikJMo6fZnnD7+KmcvSNXyL1354CbrPQHYRtaCUSDTCeCKBrywq3YZfcq9PdWEPiPLycl9Sqz0fadzSZCaG5VxqUYZDFUJzaQLHpjYYIBIuZ9+eXXgMg1zeBNviw4/Ocn8iychcBgDTNGViYkKGQhUiXxASk92XLtYnr+1emeTotgi28i5u9x6EcOlujeqaanngqy+I1w91YFoWjiPJ5/IoiiA5NUd8cJg9bTv46S9+y9nzV+X94RFhOxLAJLt0BnPhCLN3xjVAMHZlHOgg2PA0un+DrfD+6GjCkLmM5dHd2qef3qWndwC320UqlWYsMcm2rY0YXp3U1LT1cHJWc6z8gmplv2mb5gDTvYOPqEdbHWkBEqbFIDAoK7+yuGwt/eHXH5wMbP5yrd28o4miwoCaSi1h+LxUV0WkR3c7v3zvj/zpoy4t71hzMrNwwJ7uO7fiV4pVWpPi3wWoRYFzlqtmZ4OZlcc0Xd91YN8u9rY+T1VlyMrlTQbiw9qp05c497drIOQZd37mjfxMPA6bXHDd/izhfb4WCCDc/DX8DWcJbpFU7ZbEWiUlm/MEnvtYrdyxnzU0Qawhp44AFAU863c2pLMcBCdb6uV384OX4rb8RznEF8j6SWikePxvo1Nd6/bfAZx+UReoUZdSAAAAAElFTkSuQmCC';
 
 module.exports = PluginManager;

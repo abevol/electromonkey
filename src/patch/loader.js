@@ -27,6 +27,19 @@ try {
   const PLUGINS_DIR = path.join(PROJECT_ROOT, 'plugins');
   const PRELOAD_INJECT = path.join(PATCH_DIR, 'preload-inject.js');
 
+  // ── 加载高清 LOGO ──────────────────────────────────────────────────────────
+  // 从 assets/icon.png 读取 256px 原图，覆盖 PluginManager 上的缩略图默认值
+  try {
+    const fs = require('fs');
+    const iconPath = path.join(PROJECT_ROOT, 'assets', 'icon.png');
+    if (fs.existsSync(iconPath)) {
+      const iconBase64 = fs.readFileSync(iconPath).toString('base64');
+      PluginManager.LOGO_DATA_URI = 'data:image/png;base64,' + iconBase64;
+    }
+  } catch (_) {
+    // 读取失败则保留 PluginManager 上的小图默认值
+  }
+
   // ── 初始化插件管理器 ────────────────────────────────────────────────────────
   const pluginManager = new PluginManager(PLUGINS_DIR);
   pluginManager.discoverPlugins();
@@ -73,6 +86,11 @@ try {
         if (!url || url === 'about:blank') return;
 
         const plugins = pluginManager.getMatchingPlugins(url);
+        if (plugins.length > 0) {
+          webContents.executeJavaScript(
+            'window.__ELECTROMONKEY_LOGO__ = ' + JSON.stringify(PluginManager.LOGO_DATA_URI) + ';'
+          ).catch(() => {});
+        }
         for (const plugin of plugins) {
           const css = pluginManager.getPluginCSS(plugin);
           if (css) {
