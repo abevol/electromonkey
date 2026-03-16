@@ -4,28 +4,12 @@
 const fs = require('fs');
 const path = require('path');
 
-const ROOT = path.resolve(__dirname, '..');
+const { resolveTargetApp } = require('./config');
 
 const BACKUP_SUFFIX = '-em-backup';
 
-function parseArgs() {
-  const args = process.argv.slice(2);
-  let target = null;
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--target' && args[i + 1]) {
-      target = path.resolve(args[++i]);
-    }
-  }
-  if (!target) {
-    const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf-8'));
-    const relPath = pkg.config && pkg.config.targetApp;
-    if (relPath) target = path.resolve(ROOT, relPath);
-  }
-  return target;
-}
-
 function main() {
-  const targetAsar = parseArgs();
+  const targetAsar = resolveTargetApp();
   if (!targetAsar) {
     console.error('错误：未指定目标路径。');
     process.exit(1);

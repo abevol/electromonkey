@@ -6,25 +6,9 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const ROOT = path.resolve(__dirname, '..');
+const { ROOT, resolveTargetApp } = require('./config');
 
 const BACKUP_SUFFIX = '-em-backup';
-
-function parseArgs() {
-  const args = process.argv.slice(2);
-  let target = null;
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--target' && args[i + 1]) {
-      target = path.resolve(args[++i]);
-    }
-  }
-  if (!target) {
-    const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf-8'));
-    const relPath = pkg.config && pkg.config.targetApp;
-    if (relPath) target = path.resolve(ROOT, relPath);
-  }
-  return target;
-}
 
 /**
  * 从目标 asar 文件路径推导备份相关路径。
@@ -56,7 +40,7 @@ function toRequirePath(p) {
 }
 
 async function main() {
-  const targetAsar = parseArgs();
+  const targetAsar = resolveTargetApp();
   if (!targetAsar) {
     console.error('错误：未指定目标路径。');
     console.error('用法: node scripts/deploy.js --target <asar文件路径>');

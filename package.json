@@ -8,9 +8,6 @@
     "undeploy": "node scripts/undeploy.js",
     "build": "node scripts/build.js"
   },
-  "config": {
-    "targetApp": "../douyin/7.4.0/resources/app.asar"
-  },
   "dependencies": {
     "@electron/asar": "^4.1.0"
   }

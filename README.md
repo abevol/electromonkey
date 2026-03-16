@@ -50,14 +50,16 @@ npm install
 
 ### 配置目标应用
 
-编辑 `package.json` 中的 `config.targetApp`，指向目标 Electron 应用的 asar 文件：
+复制 `.env.example` 为 `.env`，设置目标 Electron 应用的 asar 文件路径：
 
-```json
-{
-  "config": {
-    "targetApp": "../douyin/7.4.0/resources/app.asar"
-  }
-}
+```bash
+cp .env.example .env
+```
+
+编辑 `.env` 文件：
+
+```ini
+TARGET_APP=../target-app/resources/app.asar
 ```
 
 ### 部署 / 卸载
@@ -73,7 +75,7 @@ npm run undeploy   # 还原原始应用
 node scripts/deploy.js --target /path/to/electron-app/resources/app.asar
 ```
 
-> **路径解析优先级**：`--target` 参数 > `package.json` 中的 `config.targetApp`
+> **路径解析优先级**：`--target` 参数 > `.env` 中的 `TARGET_APP`
 
 部署后直接启动目标应用即可，无需特殊启动器。控制面板标题会显示 **DEV** 标签以区分开发模式。
 

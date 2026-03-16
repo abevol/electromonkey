@@ -148,4 +148,4 @@ npm run undeploy  # Dev mode: restore original asar
 npm run build     # Build release package into dist/
 ```
 
-The `config.targetApp` field in `package.json` points to the target app's asar file (e.g. `../douyin/7.4.0/resources/app.asar`), used by dev mode scripts. The backup naming convention is `*-em-backup.asar` (e.g. `app.asar` → `app-em-backup.asar`).
+The `TARGET_APP` field in `.env` (git-ignored) points to the target app's asar file (e.g. `../douyin/7.4.0/resources/app.asar`), used by dev mode scripts. `.env.example` is the committed template. The backup naming convention is `*-em-backup.asar` (e.g. `app.asar` → `app-em-backup.asar`).
